@@ -1,0 +1,32 @@
+> psql -U postgres
+psql (17.6 (Homebrew))
+Type "help" for help.
+
+postgres=# \l
+postgres=# \dt
+Did not find any relations.
+postgres=# -- create data
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    age INT
+);
+
+-- insert data
+INSERT INTO students (name, age) VALUES ('Alice', 21), ('Bob', 23);
+
+-- select data
+CREATE TABLE
+INSERT 0 2
+postgres=# SELECT * FROM students;
+
+-- delete table
+DROP TABLE students;
+ id | name  | age 
+----+-------+-----
+  1 | Alice |  21
+  2 | Bob   |  23
+(2 rows)
+
+DROP TABLE
+postgres=# \q
