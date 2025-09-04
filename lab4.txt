@@ -1,0 +1,54 @@
+> sudo -u postgres psql
+psql (17.6 (Homebrew))
+Type "help" for help.
+
+postgres=# CREATE TABLE students (
+    student_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name  VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    faculty VARCHAR(100)
+);
+CREATE TABLE
+postgres=# CREATE TABLE courses (
+    course_id SERIAL PRIMARY KEY,
+    course_name VARCHAR(100) NOT NULL,
+    credits INTEGER CHECK (credits > 0)
+);
+CREATE TABLE
+postgres=# CREATE TABLE enrollments (
+    enrollment_id SERIAL PRIMARY KEY,
+    student_id INTEGER NOT NULL REFERENCES students(student_id),
+    course_id  INTEGER NOT NULL REFERENCES courses(course_id),
+    grade INTEGER CHECK (grade >= 0 AND grade <= 100)
+);
+CREATE TABLE
+postgres=# INSERT INTO students (first_name, last_name, email, faculty) VALUES
+('Sigma', 'Boy', 'sboyk@example.com', 'Software Engineering'),
+('Super', 'Man', 'sman@example.com',  'Psycology'),
+('Spider', 'Man', 'spman@example.com',  'AMI');
+INSERT 0 3
+postgres=# INSERT INTO courses (course_name, credits) VALUES
+('Databases', 5),
+('Algorithms', 4),
+('Operating Systems', 6);
+INSERT 0 3
+postgres=# INSERT INTO enrollments (student_id, course_id, grade) VALUES
+(1, 1, 90), (2, 2, 85), (3, 3, 78);    
+INSERT 0 3
+postgres=# ALTER TABLE students ADD COLUMN birth_date DATE;
+ALTER TABLE
+postgres=# ALTER TABLE students RENAME COLUMN faculty TO department;
+ALTER TABLE
+postgres=# CREATE TEMP TABLE temp_top_students (
+    student_id INTEGER,
+    avg_grade  INTEGER
+);
+CREATE TABLE
+postgres=# INSERT INTO temp_top_students VALUES (1, 90);
+INSERT 0 1
+postgres=# SELECT * FROM temp_top_students;
+ student_id | avg_grade 
+------------+-----------
+          1 |        90
+(1 row)
