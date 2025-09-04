@@ -1,0 +1,24 @@
+> psql -U postgres
+psql (17.6 (Homebrew))
+Type "help" for help.
+
+postgres=# CREATE DATABASE cool_db;
+CREATE DATABASE
+postgres=# CREATE DATABASE another_cool_db;
+CREATE DATABASE
+postgres=# DROP DATABASE cool_db;
+DROP DATABASE
+postgres=# DROP DATABASE another_cool_db 
+postgres-# ;
+DROP DATABASE
+postgres=# CREATE DATABASE another_cool_db;
+CREATE DATABASE
+postgres=# \c another_cool_db;
+You are now connected to database "another_cool_db" as user "postgres".
+another_cool_db=# DROP DATABASE another_cool_db;
+ERROR:  cannot drop the currently open database
+another_cool_db=# \c postgres ;
+You are now connected to database "postgres" as user "postgres".
+postgres=# DROP DATABASE another_cool_db ;
+DROP DATABASE
+postgres=# 
