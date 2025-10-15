@@ -1,0 +1,84 @@
+sudo -u postgres psql
+psql (17.6 (Homebrew))
+Type "help" for help.
+
+postgres=# CREATE TABLE employees (
+    emp_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    department VARCHAR(50),
+    email VARCHAR(100)
+);
+CREATE TABLE
+postgres=# INSERT INTO employees (first_name, last_name, department, email) VALUES
+('Alice', 'Johnson', 'IT', 'alice@alatoo.edu.kg'),
+('Bob', 'Smith', 'Finance', 'bob@alatoo.edu.kg'),
+('Carol', 'Brown', 'Sales', 'carol@alatoo.edu.kg');
+INSERT 0 3
+postgres=# COPY employees TO '/tmp/employees.csv' WITH CSV HEADER;
+COPY 3
+postgres=# COPY employees TO '/tmp/employees.txt' WITH DELIMITER '|' NULL 'N/A' CSV HEADER;
+COPY 3
+postgres=# COPY (SELECT * FROM employees WHERE department = 'IT') TO '/tmp/it_employees.csv' WITH CSV HEADER;
+COPY 1
+postgres=# \! cat /tmp/employees.csv
+emp_id,first_name,last_name,department,email
+1,Alice,Johnson,IT,alice@alatoo.edu.kg
+2,Bob,Smith,Finance,bob@alatoo.edu.kg
+3,Carol,Brown,Sales,carol@alatoo.edu.kg
+
+postgres=# CREATE TABLE products (
+    product_id SERIAL PRIMARY KEY,
+    product_name VARCHAR(100),
+    price DECIMAL(10,2)
+);
+CREATE TABLE
+postgres=# INSERT INTO products (product_name, price) VALUES
+('Laptop', 1200.00),
+('Mouse', 25.00),
+('Keyboard', 70.00);
+INSERT 0 3
+postgres=# COPY products TO '/tmp/products.csv' WITH CSV HEADER;
+COPY 3
+postgres=# COPY products FROM '/tmp/products.csv' WITH CSV HEADER;
+COPY 3
+
+postgres=# CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    customer_name VARCHAR(100),
+    email VARCHAR(100)
+);
+CREATE TABLE
+postgres=# INSERT INTO customers (customer_name, email) VALUES
+('John Doe', 'john@example.com'),
+('Jane Smith', 'jane@example.com');
+INSERT 0 2
+postgres=# COPY customers TO '/tmp/customers.csv' WITH CSV HEADER DELIMITER ';' QUOTE '"';
+COPY 2
+
+postgres=# CREATE TABLE orders (
+    order_id SERIAL PRIMARY KEY,
+    customer_id INT,
+    order_date DATE DEFAULT CURRENT_DATE,
+    total DECIMAL(10,2)
+);
+CREATE TABLE
+postgres=# INSERT INTO orders (customer_id, total) VALUES
+(1, 500.00),
+(2, 700.00);
+INSERT 0 2
+postgres=# COPY orders TO '/tmp/orders.csv' WITH CSV HEADER FORCE_QUOTE (order_date);
+COPY 2
+postgres=# \! head -n 3 /tmp/orders.csv
+order_id,customer_id,order_date,total
+1,1,"2025-10-15",500.00
+2,2,"2025-10-15",700.00
+
+postgres=# COPY (SELECT * FROM products WHERE price > 50) TO '/tmp/expensive_products.csv' WITH CSV HEADER;
+COPY 2
+postgres=# \! head -n 3 /tmp/expensive_products.csv
+product_id,product_name,price
+1,Laptop,1200.00
+3,Keyboard,70.00
+
+postgres=# \q

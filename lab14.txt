@@ -1,0 +1,344 @@
+sudo -u postgres psql
+psql (17.6 (Homebrew))
+Type "help" for help.
+
+postgres=# CREATE TABLE accounts (
+    account_id SERIAL PRIMARY KEY,
+    account_name VARCHAR(100),
+    balance DECIMAL(10,2)
+);
+CREATE TABLE
+postgres=# INSERT INTO accounts (account_name, balance) VALUES
+('Account A', 1000.00),
+('Account B', 500.00);
+INSERT 0 2
+
+postgres=# BEGIN;
+BEGIN
+postgres=# UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;
+UPDATE 1
+postgres=# UPDATE accounts SET balance = balance + 100 WHERE account_id = 2;
+UPDATE 1
+postgres=# COMMIT;
+COMMIT
+postgres=# SELECT * FROM accounts;
+ account_id | account_name | balance  
+-------------+--------------+----------
+           1 | Account A    |   900.00
+           2 | Account B    |   600.00
+(2 rows)
+
+postgres=# BEGIN;
+BEGIN
+postgres=# UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;
+UPDATE 1
+postgres=# UPDATE accounts SET balance = balance + 100 WHERE account_id = 2;
+UPDATE 1
+postgres=# ROLLBACK;
+ROLLBACK
+postgres=# SELECT * FROM accounts;
+ account_id | account_name | balance  
+-------------+--------------+----------
+           1 | Account A    |   900.00
+           2 | Account B    |   600.00
+(2 rows)
+
+postgres=# BEGIN;
+BEGIN
+postgres=# SELECT balance FROM accounts WHERE account_id = 1;
+ balance 
+----------
+   900.00
+(1 row)
+
+postgres=# UPDATE accounts SET balance = balance - 500 WHERE account_id = 1;
+UPDATE 1
+postgres=# UPDATE accounts SET balance = balance + 500 WHERE account_id = 2;
+UPDATE 1
+postgres=# COMMIT;
+COMMIT
+postgres=# SELECT * FROM accounts;
+ account_id | account_name | balance  
+-------------+--------------+----------
+           1 | Account A    |   400.00
+           2 | Account B    |  1100.00
+(2 rows)
+
+postgres=# BEGIN;
+BEGIN
+postgres=# INSERT INTO accounts (account_name, balance) VALUES ('Temp', 200.00);
+INSERT 0 1
+postgres=# ROLLBACK;
+ROLLBACK
+postgres=# SELECT * FROM accounts WHERE account_name='Temp';
+ account_id | account_name | balance 
+-------------+--------------+---------
+(0 rows)
+
+postgres=# CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(150)
+);
+CREATE TABLE
+postgres=# CREATE TABLE orders (
+    order_id SERIAL PRIMARY KEY,
+    customer_id INTEGER REFERENCES customers(customer_id),
+    total DECIMAL(10,2)
+);
+CREATE TABLE
+postgres=# BEGIN;
+BEGIN
+postgres=# INSERT INTO customers (name, email) VALUES ('John Doe', 'john@email.com');
+INSERT 0 1
+postgres=# INSERT INTO orders (customer_id, total) VALUES (LASTVAL(), 100.00);
+INSERT 0 1
+postgres=# COMMIT;
+COMMIT
+postgres=# SELECT * FROM customers;
+ customer_id |   name    |      email      
+--------------+-----------+----------------
+            1 | John Doe  | john@email.com
+(1 row)
+
+postgres=# SELECT * FROM orders;
+ order_id | customer_id | total  
+-----------+--------------+--------
+         1 |            1 | 100.00
+(1 row)
+
+postgres=# BEGIN TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+BEGIN
+postgres=# SELECT * FROM accounts;
+ account_id | account_name | balance  
+-------------+--------------+----------
+           1 | Account A    |   400.00
+           2 | Account B    |  1100.00
+(2 rows)
+
+postgres=# COMMIT;
+COMMIT
+
+postgres=# BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;
+BEGIN
+postgres=# SELECT * FROM accounts WHERE balance > 1000;
+ account_id | account_name | balance  
+-------------+--------------+----------
+           2 | Account B    |  1100.00
+(1 row)
+
+postgres=# SELECT * FROM accounts WHERE balance > 1000;
+ account_id | account_name | balance  
+-------------+--------------+----------
+           2 | Account B    |  1100.00
+(1 row)
+postgres=# COMMIT;
+COMMIT
+
+postgres=# BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+BEGIN
+postgres=# SELECT * FROM accounts WHERE balance > 100;
+ account_id | account_name | balance  
+-------------+--------------+----------
+           1 | Account A    |   400.00
+           2 | Account B    |  1100.00
+(2 rows)
+
+postgres=# SELECT * FROM accounts WHERE balance > 100;
+ account_id | account_name | balance  
+-------------+--------------+----------
+           1 | Account A    |   400.00
+           2 | Account B    |  1100.00
+(2 rows)
+postgres=# COMMIT;
+COMMIT
+
+postgres=# BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN
+postgres=# SELECT * FROM accounts;
+ account_id | account_name | balance  
+-------------+--------------+----------
+           1 | Account A    |   400.00
+           2 | Account B    |  1100.00
+(2 rows)
+
+postgres=# UPDATE accounts SET balance = balance * 1.05;
+UPDATE 2
+postgres=# COMMIT;
+COMMIT
+postgres=# SELECT * FROM accounts;
+ account_id | account_name | balance  
+-------------+--------------+----------
+           1 | Account A    |   420.00
+           2 | Account B    |  1155.00
+(2 rows)
+
+postgres=# BEGIN;
+BEGIN
+postgres=# INSERT INTO customers (name, email) VALUES ('Alice', 'alice@email.com');
+INSERT 0 1
+postgres=# SAVEPOINT after_customer_insert;
+SAVEPOINT
+postgres=# INSERT INTO orders (customer_id, total) VALUES (1, 500.00);
+INSERT 0 1
+postgres=# ROLLBACK TO SAVEPOINT after_customer_insert;
+ROLLBACK
+postgres=# INSERT INTO orders (customer_id, total) VALUES (1, 300.00);
+INSERT 0 1
+postgres=# COMMIT;
+COMMIT
+
+postgres=# CREATE TABLE products (
+    product_id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    price DECIMAL(10,2)
+);
+CREATE TABLE
+postgres=# BEGIN;
+BEGIN
+postgres=# INSERT INTO products (name, price) VALUES ('Laptop', 999.99);
+INSERT 0 1
+postgres=# SAVEPOINT sp1;
+SAVEPOINT
+postgres=# INSERT INTO products (name, price) VALUES ('Mouse', 25.99);
+INSERT 0 1
+postgres=# SAVEPOINT sp2;
+SAVEPOINT
+postgres=# INSERT INTO products (name, price) VALUES ('Invalid Product', -50.00);
+INSERT 0 1
+postgres=# ROLLBACK TO SAVEPOINT sp2;
+ROLLBACK
+postgres=# INSERT INTO products (name, price) VALUES ('Keyboard', 79.99);
+INSERT 0 1
+postgres=# COMMIT;
+COMMIT
+postgres=# SELECT * FROM products;
+ product_id |    name    |  price  
+-------------+------------+---------
+           1 | Laptop     |  999.99
+           2 | Mouse      |   25.99
+           3 | Keyboard   |   79.99
+(3 rows)
+
+postgres=# BEGIN;
+BEGIN
+postgres=# INSERT INTO logs (message) VALUES ('Starting process');
+ERROR:  relation "logs" does not exist
+postgres=# CREATE TABLE logs (
+    log_id SERIAL PRIMARY KEY,
+    message TEXT
+);
+CREATE TABLE
+postgres=# BEGIN;
+BEGIN
+postgres=# INSERT INTO logs (message) VALUES ('Starting process');
+INSERT 0 1
+postgres=# SAVEPOINT process_start;
+SAVEPOINT
+postgres=# INSERT INTO logs (message) VALUES ('Process completed');
+INSERT 0 1
+postgres=# RELEASE SAVEPOINT process_start;
+RELEASE SAVEPOINT
+postgres=# COMMIT;
+COMMIT
+postgres=# SELECT * FROM logs;
+ log_id |      message       
+--------+---------------------
+      1 | Starting process
+      2 | Process completed
+(2 rows)
+
+postgres=# BEGIN;
+BEGIN
+postgres=# UPDATE accounts SET balance = balance - 1 WHERE account_id = 1;
+UPDATE 1
+postgres=# INSERT INTO orders (customer_id, total) VALUES (1, 50.00);
+INSERT 0 1
+postgres=# COMMIT;
+COMMIT
+
+postgres=# BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN
+postgres=# UPDATE accounts SET balance = balance + 100 WHERE account_id = 1;
+UPDATE 1
+postgres=# COMMIT;
+COMMIT
+
+postgres=# BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;
+BEGIN
+postgres=# SELECT * FROM accounts;
+ account_id | account_name | balance  
+-------------+--------------+----------
+           1 | Account A    |   520.00
+           2 | Account B    |  1155.00
+(2 rows)
+postgres=# COMMIT;
+COMMIT
+
+postgres=# BEGIN;
+BEGIN
+postgres=# INSERT INTO orders (customer_id, total) VALUES (1, 1000.00);
+INSERT 0 1
+postgres=# SAVEPOINT before_items;
+SAVEPOINT
+postgres=# INSERT INTO order_items (order_id, product_id, quantity) VALUES (1, 2, 1);
+ERROR:  relation "order_items" does not exist
+postgres=# COMMIT;
+COMMIT
+
+postgres=# SELECT 
+    blocked_locks.pid AS blocked_pid,
+    blocking_locks.pid AS blocking_pid
+FROM pg_catalog.pg_locks blocked_locks
+JOIN pg_catalog.pg_locks blocking_locks 
+ON blocking_locks.locktype = blocked_locks.locktype
+WHERE NOT blocked_locks.granted;
+ blocked_pid | blocking_pid 
+--------------+--------------
+(0 rows)
+
+postgres=# BEGIN;
+BEGIN
+postgres=# INSERT INTO audit_log (action, timestamp) VALUES ('user_creation', NOW());
+ERROR:  relation "audit_log" does not exist
+postgres=# CREATE TABLE audit_log (
+    log_id SERIAL PRIMARY KEY,
+    action VARCHAR(100),
+    timestamp TIMESTAMP
+);
+CREATE TABLE
+postgres=# CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(150)
+);
+CREATE TABLE
+postgres=# CREATE TABLE user_preferences (
+    pref_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id),
+    theme VARCHAR(50)
+);
+CREATE TABLE
+postgres=# BEGIN;
+BEGIN
+postgres=# INSERT INTO audit_log (action, timestamp) VALUES ('user_creation', NOW());
+INSERT 0 1
+postgres=# INSERT INTO users (name, email) VALUES ('John Doe', 'john@example.com');
+INSERT 0 1
+postgres=# INSERT INTO user_preferences (user_id, theme) VALUES (currval('users_user_id_seq'), 'dark');
+INSERT 0 1
+postgres=# COMMIT;
+COMMIT
+postgres=# SELECT * FROM users;
+ user_id |   name    |      email       
+----------+-----------+-----------------
+        1 | John Doe  | john@example.com
+(1 row)
+
+postgres=# SELECT * FROM audit_log;
+ log_id |    action     |         timestamp         
+--------+---------------+----------------------------
+      1 | user_creation | 2025-10-15 17:05:00.000000
+(1 row)
+
+postgres=# 

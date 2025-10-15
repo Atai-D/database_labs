@@ -1,0 +1,241 @@
+sudo -u postgres psql
+psql (17.6 (Homebrew))
+Type "help" for help.
+
+postgres=# CREATE TABLE employees (
+    employee_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    department VARCHAR(50),
+    manager_id INTEGER,
+    salary DECIMAL(10,2),
+    tenure INTEGER
+);
+CREATE TABLE
+postgres=# INSERT INTO employees (first_name, last_name, department, manager_id, salary, tenure) VALUES
+('Alice', 'Johnson', 'IT', NULL, 85000, 6),
+('Bob', 'Smith', 'IT', 1, 60000, 3),
+('Charlie', 'Brown', 'Sales', NULL, 95000, 8),
+('Diana', 'White', 'Sales', 3, 55000, 2),
+('Eve', 'Black', 'Finance', NULL, 105000, 10),
+('Frank', 'Green', 'Finance', 5, 72000, 4);
+INSERT 0 6
+
+postgres=# SELECT first_name, last_name, salary
+FROM employees
+WHERE salary > (
+    SELECT AVG(salary)
+    FROM employees
+);
+ first_name | last_name | salary  
+-------------+------------+---------
+ Eve         | Black      | 105000.00
+ Charlie     | Brown      | 95000.00
+ Alice       | Johnson    | 85000.00
+(3 rows)
+
+postgres=# WITH regional_sales AS (
+    SELECT department, SUM(salary) AS total_salary
+    FROM employees
+    GROUP BY department
+)
+SELECT department, total_salary
+FROM regional_sales
+WHERE total_salary > 100000;
+ department | total_salary 
+------------+--------------
+ IT         |     145000.00
+ Sales      |     150000.00
+ Finance    |     177000.00
+(3 rows)
+
+postgres=# WITH RECURSIVE org_chart AS (
+    SELECT employee_id, first_name, last_name, manager_id
+    FROM employees
+    WHERE manager_id IS NULL
+    UNION ALL
+    SELECT e.employee_id, e.first_name, e.last_name, e.manager_id
+    FROM employees e
+    INNER JOIN org_chart oc ON e.manager_id = oc.employee_id
+)
+SELECT * FROM org_chart;
+ employee_id | first_name | last_name | manager_id 
+--------------+------------+-----------+------------
+            1 | Alice      | Johnson   |           
+            3 | Charlie    | Brown     |           
+            5 | Eve        | Black     |           
+            2 | Bob        | Smith     |          1
+            4 | Diana      | White     |          3
+            6 | Frank      | Green     |          5
+(6 rows)
+
+postgres=# CREATE TABLE warehouse_1 (
+    product_id SERIAL PRIMARY KEY,
+    product_name VARCHAR(100),
+    quantity INT
+);
+CREATE TABLE
+postgres=# CREATE TABLE warehouse_2 (
+    product_id SERIAL PRIMARY KEY,
+    product_name VARCHAR(100),
+    quantity INT
+);
+CREATE TABLE
+postgres=# INSERT INTO warehouse_1 (product_name, quantity) VALUES
+('Laptop', 10),
+('Mouse', 0),
+('Keyboard', 5);
+INSERT 0 3
+postgres=# INSERT INTO warehouse_2 (product_name, quantity) VALUES
+('Laptop', 8),
+('Monitor', 0),
+('Keyboard', 3);
+INSERT 0 3
+postgres=# SELECT product_name FROM warehouse_1
+UNION
+SELECT product_name FROM warehouse_2;
+ product_name 
+--------------
+ Laptop
+ Mouse
+ Keyboard
+ Monitor
+(4 rows)
+
+postgres=# SELECT product_id FROM warehouse_1 WHERE quantity = 0
+INTERSECT
+SELECT product_id FROM warehouse_2 WHERE quantity = 0;
+ product_id 
+------------
+(0 rows)
+
+postgres=# SELECT
+    first_name,
+    last_name,
+    department,
+    salary,
+    RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS dept_salary_rank
+FROM employees;
+ first_name | last_name | department | salary  | dept_salary_rank 
+-------------+------------+-------------+---------+------------------
+ Alice       | Johnson    | IT          | 85000.00 |                1
+ Bob         | Smith      | IT          | 60000.00 |                2
+ Charlie     | Brown      | Sales       | 95000.00 |                1
+ Diana       | White      | Sales       | 55000.00 |                2
+ Eve         | Black      | Finance     |105000.00 |                1
+ Frank       | Green      | Finance     | 72000.00 |                2
+(6 rows)
+
+postgres=# CREATE TABLE sales (
+    product_name VARCHAR(100),
+    year INT,
+    sales_amount DECIMAL(10,2)
+);
+CREATE TABLE
+postgres=# INSERT INTO sales VALUES
+('Laptop', 2022, 50000),
+('Laptop', 2023, 70000),
+('Laptop', 2024, 65000),
+('Mouse', 2022, 8000),
+('Mouse', 2023, 9000),
+('Mouse', 2024, 7500);
+INSERT 0 6
+postgres=# SELECT
+    product_name,
+    SUM(CASE WHEN year = 2022 THEN sales_amount ELSE 0 END) AS year_2022,
+    SUM(CASE WHEN year = 2023 THEN sales_amount ELSE 0 END) AS year_2023,
+    SUM(CASE WHEN year = 2024 THEN sales_amount ELSE 0 END) AS year_2024
+FROM sales
+GROUP BY product_name;
+ product_name | year_2022 | year_2023 | year_2024 
+--------------+------------+------------+------------
+ Laptop       |   50000.00 |   70000.00 |   65000.00
+ Mouse        |    8000.00 |    9000.00 |    7500.00
+(2 rows)
+
+postgres=# CREATE VIEW pivoted_sales AS
+SELECT
+    product_name,
+    SUM(CASE WHEN year = 2022 THEN sales_amount ELSE 0 END) AS year_2022,
+    SUM(CASE WHEN year = 2023 THEN sales_amount ELSE 0 END) AS year_2023,
+    SUM(CASE WHEN year = 2024 THEN sales_amount ELSE 0 END) AS year_2024
+FROM sales
+GROUP BY product_name;
+CREATE VIEW
+postgres=# SELECT product_name, '2022' AS year, year_2022 AS sales_amount FROM pivoted_sales
+UNION ALL
+SELECT product_name, '2023' AS year, year_2023 AS sales_amount FROM pivoted_sales
+UNION ALL
+SELECT product_name, '2024' AS year, year_2024 AS sales_amount FROM pivoted_sales
+ORDER BY product_name, year;
+ product_name | year | sales_amount 
+--------------+------+--------------
+ Laptop       | 2022 |   50000.00
+ Laptop       | 2023 |   70000.00
+ Laptop       | 2024 |   65000.00
+ Mouse        | 2022 |    8000.00
+ Mouse        | 2023 |    9000.00
+ Mouse        | 2024 |    7500.00
+(6 rows)
+
+postgres=# SELECT
+    employee_id,
+    SUM(salary) OVER (PARTITION BY department) AS total_dept_salary,
+    AVG(salary) FILTER (WHERE tenure > 5) OVER () AS avg_salary_senior
+FROM employees;
+ employee_id | total_dept_salary | avg_salary_senior 
+--------------+-------------------+-------------------
+            1 |          145000.00 |        95000.00
+            2 |          145000.00 |        95000.00
+            3 |          150000.00 |        95000.00
+            4 |          150000.00 |        95000.00
+            5 |          177000.00 |        95000.00
+            6 |          177000.00 |        95000.00
+(6 rows)
+
+postgres=# CREATE TABLE orders (
+    product_name VARCHAR(100),
+    status VARCHAR(50)
+);
+CREATE TABLE
+postgres=# INSERT INTO orders VALUES
+('Laptop', 'High Priority'),
+('Mouse', 'Medium Priority'),
+('Keyboard', 'Low Priority'),
+('Monitor', 'High Priority');
+INSERT 0 4
+postgres=# SELECT product_name, status
+FROM orders
+ORDER BY
+    CASE status
+        WHEN 'High Priority' THEN 1
+        WHEN 'Medium Priority' THEN 2
+        WHEN 'Low Priority' THEN 3
+        ELSE 4
+    END;
+ product_name |     status      
+--------------+-----------------
+ Laptop       | High Priority
+ Monitor      | High Priority
+ Mouse        | Medium Priority
+ Keyboard     | Low Priority
+(4 rows)
+
+postgres=# EXPLAIN SELECT * FROM employees WHERE department = 'IT';
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Seq Scan on employees  (cost=0.00..12.00 rows=2 width=88)
+   Filter: ((department)::text = 'IT'::text)
+(2 rows)
+
+postgres=# EXPLAIN ANALYZE SELECT * FROM employees WHERE department = 'IT';
+                                                    QUERY PLAN                                                    
+------------------------------------------------------------------------------------------------------------------
+ Seq Scan on employees  (cost=0.00..12.00 rows=2 width=88) (actual time=0.018..0.021 rows=2 loops=1)
+   Filter: ((department)::text = 'IT'::text)
+   Rows Removed by Filter: 4
+ Planning Time: 0.050 ms
+ Execution Time: 0.035 ms
+(5 rows)
+
+postgres=# 
