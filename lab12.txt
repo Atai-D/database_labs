@@ -1,0 +1,243 @@
+> psql -U postgres
+psql (17.6 (Homebrew))
+Type "help" for help.
+
+postgres=# CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100)
+);
+CREATE TABLE
+
+postgres=# CREATE TABLE orders (
+    order_id SERIAL PRIMARY KEY,
+    customer_id INTEGER REFERENCES customers(customer_id),
+    order_date DATE,
+    total_amount DECIMAL(10,2)
+);
+CREATE TABLE
+
+postgres=# CREATE TABLE products (
+    product_id SERIAL PRIMARY KEY,
+    product_name VARCHAR(100),
+    price DECIMAL(10,2)
+);
+CREATE TABLE
+
+postgres=# CREATE TABLE order_items (
+    order_item_id SERIAL PRIMARY KEY,
+    order_id INTEGER REFERENCES orders(order_id),
+    product_id INTEGER REFERENCES products(product_id),
+    quantity INTEGER
+);
+CREATE TABLE
+
+postgres=# CREATE TABLE employees (
+    employee_id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    manager_id INTEGER REFERENCES employees(employee_id)
+);
+CREATE TABLE
+
+postgres=# INSERT INTO customers (name, email) VALUES
+('John Smith', 'john@email.com'),
+('Sarah Johnson', 'sarah@email.com'),
+('Mike Chen', 'mike@email.com'),
+('Lisa Brown', 'lisa@email.com'),
+('David Wilson', 'david@email.com');
+INSERT 0 5
+
+postgres=# INSERT INTO orders (customer_id, order_date, total_amount) VALUES
+(1, '2024-01-15', 150.00),
+(1, '2024-02-20', 75.50),
+(2, '2024-01-10', 200.00),
+(3, '2024-03-05', 300.25),
+(1, '2024-03-12', 120.75);
+INSERT 0 5
+
+postgres=# INSERT INTO products (product_name, price) VALUES
+('Laptop', 999.99),
+('Mouse', 25.50),
+('Keyboard', 75.00),
+('Monitor', 299.99);
+INSERT 0 4
+
+postgres=# INSERT INTO order_items (order_id, product_id, quantity) VALUES
+(1, 1, 1),
+(1, 2, 1),
+(2, 3, 1),
+(3, 4, 1),
+(4, 1, 1),
+(5, 2, 2);
+INSERT 0 6
+
+postgres=# INSERT INTO employees (name, manager_id) VALUES
+('CEO Alice', NULL),
+('Manager Bob', 1),
+('Manager Carol', 1),
+('Developer Dave', 2),
+('Developer Eve', 2),
+('Designer Frank', 3);
+INSERT 0 6
+
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+FROM customers c
+INNER JOIN orders o ON c.customer_id = o.customer_id;
+    name     |     email      | order_date | total_amount 
+-------------+----------------+------------+--------------
+ John Smith  | john@email.com | 2024-01-15 |       150.00
+ John Smith  | john@email.com | 2024-02-20 |        75.50
+ Sarah Johnson| sarah@email.com| 2024-01-10 |       200.00
+ Mike Chen   | mike@email.com | 2024-03-05 |       300.25
+ John Smith  | john@email.com | 2024-03-12 |       120.75
+(5 rows)
+
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+FROM customers c
+LEFT JOIN orders o ON c.customer_id = o.customer_id;
+     name      |     email      | order_date | total_amount 
+---------------+----------------+------------+--------------
+ John Smith    | john@email.com | 2024-01-15 |       150.00
+ John Smith    | john@email.com | 2024-02-20 |        75.50
+ John Smith    | john@email.com | 2024-03-12 |       120.75
+ Sarah Johnson | sarah@email.com| 2024-01-10 |       200.00
+ Mike Chen     | mike@email.com | 2024-03-05 |       300.25
+ Lisa Brown    | lisa@email.com |            |             
+ David Wilson  | david@email.com|            |             
+(7 rows)
+
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+FROM customers c
+RIGHT JOIN orders o ON c.customer_id = o.customer_id;
+    name     |     email      | order_date | total_amount 
+-------------+----------------+------------+--------------
+ John Smith  | john@email.com | 2024-01-15 |       150.00
+ John Smith  | john@email.com | 2024-02-20 |        75.50
+ Sarah Johnson| sarah@email.com| 2024-01-10 |       200.00
+ Mike Chen   | mike@email.com | 2024-03-05 |       300.25
+ John Smith  | john@email.com | 2024-03-12 |       120.75
+(5 rows)
+
+postgres=# SELECT c.name, c.email, o.order_date, o.total_amount
+FROM customers c
+FULL OUTER JOIN orders o ON c.customer_id = o.customer_id;
+     name      |     email      | order_date | total_amount 
+---------------+----------------+------------+--------------
+ John Smith    | john@email.com | 2024-01-15 |       150.00
+ John Smith    | john@email.com | 2024-02-20 |        75.50
+ John Smith    | john@email.com | 2024-03-12 |       120.75
+ Sarah Johnson | sarah@email.com| 2024-01-10 |       200.00
+ Mike Chen     | mike@email.com | 2024-03-05 |       300.25
+ Lisa Brown    | lisa@email.com |            |             
+ David Wilson  | david@email.com|            |             
+(7 rows)
+
+postgres=# SELECT c.name, p.product_name
+FROM customers c
+CROSS JOIN products p
+LIMIT 10;
+     name      | product_name 
+---------------+--------------
+ John Smith    | Laptop
+ John Smith    | Mouse
+ John Smith    | Keyboard
+ John Smith    | Monitor
+ Sarah Johnson | Laptop
+ Sarah Johnson | Mouse
+ Sarah Johnson | Keyboard
+ Sarah Johnson | Monitor
+ Mike Chen     | Laptop
+ Mike Chen     | Mouse
+(10 rows)
+
+postgres=# SELECT c.name, o.order_date, oi.quantity, p.product_name, p.price
+FROM customers c
+INNER JOIN orders o ON c.customer_id = o.customer_id
+INNER JOIN order_items oi ON o.order_id = oi.order_id
+INNER JOIN products p ON oi.product_id = p.product_id;
+    name     | order_date | quantity | product_name | price  
+-------------+------------+----------+--------------+--------
+ John Smith  | 2024-01-15 |        1 | Laptop       | 999.99
+ John Smith  | 2024-01-15 |        1 | Mouse        |  25.50
+ John Smith  | 2024-02-20 |        1 | Keyboard     |  75.00
+ Sarah Johnson| 2024-01-10 |        1 | Monitor      | 299.99
+ Mike Chen   | 2024-03-05 |        1 | Laptop       | 999.99
+ John Smith  | 2024-03-12 |        2 | Mouse        |  25.50
+(6 rows)
+
+postgres=# SELECT e1.name AS employee, e2.name AS manager
+FROM employees e1
+LEFT JOIN employees e2 ON e1.manager_id = e2.employee_id;
+   employee    |   manager   
+---------------+-------------
+ CEO Alice     | 
+ Manager Bob   | CEO Alice
+ Manager Carol | CEO Alice
+ Developer Dave| Manager Bob
+ Developer Eve | Manager Bob
+ Designer Frank| Manager Carol
+(6 rows)
+
+postgres=# SELECT c.name, o.order_date, o.total_amount
+FROM customers c
+INNER JOIN orders o ON c.customer_id = o.customer_id
+WHERE o.order_date >= '2024-02-01'
+AND o.total_amount > 100;
+    name    | order_date | total_amount 
+------------+------------+--------------
+ Mike Chen  | 2024-03-05 |       300.25
+ John Smith | 2024-03-12 |       120.75
+(2 rows)
+
+postgres=# SELECT c.name
+FROM customers c
+LEFT JOIN orders o ON c.customer_id = o.customer_id
+WHERE o.customer_id IS NULL;
+     name      
+---------------
+ Lisa Brown
+ David Wilson
+(2 rows)
+
+postgres=# SELECT c.name, COUNT(o.order_id) AS order_count
+FROM customers c
+LEFT JOIN orders o ON c.customer_id = o.customer_id
+GROUP BY c.name
+ORDER BY order_count DESC;
+     name      | order_count 
+---------------+-------------
+ John Smith    |           3
+ Sarah Johnson |           1
+ Mike Chen     |           1
+ Lisa Brown    |           0
+ David Wilson  |           0
+(5 rows)
+
+postgres=# SELECT p.product_name, SUM(oi.quantity) AS total_sold
+FROM products p
+LEFT JOIN order_items oi ON p.product_id = oi.product_id
+GROUP BY p.product_name
+ORDER BY total_sold DESC;
+ product_name | total_sold 
+--------------+------------
+ Mouse        |          3
+ Laptop       |          2
+ Keyboard     |          1
+ Monitor      |          1
+(4 rows)
+
+postgres=# SELECT c.name, o.order_date, p.product_name, oi.quantity, (p.price * oi.quantity) AS line_total
+FROM customers c
+INNER JOIN orders o ON c.customer_id = o.customer_id
+INNER JOIN order_items oi ON o.order_id = oi.order_id
+INNER JOIN products p ON oi.product_id = p.product_id
+ORDER BY c.name, o.order_date;
+    name     | order_date | product_name | quantity | line_total 
+-------------+------------+--------------+----------+------------
+ John Smith  | 2024-01-15 | Laptop       |        1 |     999.99
+ John Smith  | 2024-01-15 | Mouse        |        1 |      25.50
+ John Smith  | 2024-02-20 | Keyboard     |        1 |      75.00
+ John Smith  | 2024-03-12 | Mouse        |        2 |      51.00
+ Mike Chen   | 2024-03-05 | Laptop       |        1 |     999.99
+ Sarah Johnson| 2024-01-10 | Monitor      |        1 |     299.99
+(6 rows)
