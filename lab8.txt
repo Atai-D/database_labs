@@ -1,0 +1,88 @@
+sudo -u postgres psql
+psql (17.6 (Homebrew))
+Type "help" for help.
+
+postgres=# \dt
+                      List of relations
+ Schema |     Name      | Type  |  Owner   
+--------+---------------+-------+----------
+ public | authors       | table | postgres
+ public | books         | table | postgres
+ public | members       | table | postgres
+ public | loans         | table | postgres
+ public | book_authors  | table | postgres
+(5 rows)
+
+postgres=# \d authors
+                                     Table "public.authors"
+   Column    |          Type          | Collation | Nullable |                 Default                  
+-------------+------------------------+-----------+----------+------------------------------------------
+ author_id   | integer                |           | not null | nextval('authors_author_id_seq'::regclass)
+ author_name | character varying(100) |           | not null | 
+Indexes:
+    "authors_pkey" PRIMARY KEY, btree (author_id)
+
+postgres=# \d books
+                                          Table "public.books"
+     Column      |          Type          | Collation | Nullable |                Default                
+-----------------+------------------------+-----------+----------+---------------------------------------
+ book_id         | integer                |           | not null | nextval('books_book_id_seq'::regclass)
+ title           | character varying(200) |           | not null | 
+ publication_year| integer                |           |          | 
+ genre           | character varying(50)  |           |          | 
+Indexes:
+    "books_pkey" PRIMARY KEY, btree (book_id)
+
+postgres=# \d members
+                                      Table "public.members"
+   Column    |          Type          | Collation | Nullable |                  Default                  
+-------------+------------------------+-----------+----------+-------------------------------------------
+ member_id   | integer                |           | not null | nextval('members_member_id_seq'::regclass)
+ member_name | character varying(100) |           | not null | 
+ email       | character varying(150) |           |          | 
+ join_date   | date                   |           |          | CURRENT_DATE
+Indexes:
+    "members_pkey" PRIMARY KEY, btree (member_id)
+    "members_email_key" UNIQUE CONSTRAINT, btree (email)
+
+postgres=# \d loans
+                                          Table "public.loans"
+   Column   |          Type          | Collation | Nullable |                Default                
+------------+------------------------+-----------+----------+---------------------------------------
+ loan_id    | integer                |           | not null | nextval('loans_loan_id_seq'::regclass)
+ member_id  | integer                |           |          | 
+ book_id    | integer                |           |          | 
+ loan_date  | date                   |           |          | CURRENT_DATE
+ due_date   | date                   |           |          | 
+ return_date| date                   |           |          | 
+ late_fee   | numeric(6,2)           |           |          | 
+Indexes:
+    "loans_pkey" PRIMARY KEY, btree (loan_id)
+Foreign-key constraints:
+    "loans_book_id_fkey" FOREIGN KEY (book_id) REFERENCES books(book_id)
+    "loans_member_id_fkey" FOREIGN KEY (member_id) REFERENCES members(member_id)
+
+postgres=# \d book_authors
+                      Table "public.book_authors"
+  Column   |  Type   | Collation | Nullable | Default 
+-----------+---------+-----------+----------+---------
+ book_id   | integer |           | not null | 
+ author_id | integer |           | not null | 
+Indexes:
+    "book_authors_pkey" PRIMARY KEY, btree (book_id, author_id)
+Foreign-key constraints:
+    "book_authors_author_id_fkey" FOREIGN KEY (author_id) REFERENCES authors(author_id)
+    "book_authors_book_id_fkey" FOREIGN KEY (book_id) REFERENCES books(book_id)
+
+postgres=# \dt
+                      List of relations
+ Schema |     Name      | Type  |  Owner   
+--------+---------------+-------+----------
+ public | authors       | table | postgres
+ public | books         | table | postgres
+ public | members       | table | postgres
+ public | loans         | table | postgres
+ public | book_authors  | table | postgres
+(5 rows)
+
+postgres=# 

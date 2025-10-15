@@ -1,0 +1,156 @@
+sudo -u postgres psql
+psql (17.6 (Homebrew))
+Type "help" for help.
+
+postgres=# CREATE TABLE authors (
+    author_id SERIAL PRIMARY KEY,
+    author_name VARCHAR(100) NOT NULL
+);
+CREATE TABLE
+postgres=# CREATE TABLE books (
+    book_id SERIAL PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    publication_year INT,
+    genre VARCHAR(50)
+);
+CREATE TABLE
+postgres=# CREATE TABLE members (
+    member_id SERIAL PRIMARY KEY,
+    member_name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE,
+    join_date DATE DEFAULT CURRENT_DATE
+);
+CREATE TABLE
+postgres=# CREATE TABLE book_authors (
+    book_id INTEGER REFERENCES books(book_id),
+    author_id INTEGER REFERENCES authors(author_id),
+    PRIMARY KEY (book_id, author_id)
+);
+CREATE TABLE
+postgres=# CREATE TABLE loans (
+    loan_id SERIAL PRIMARY KEY,
+    member_id INTEGER REFERENCES members(member_id),
+    book_id INTEGER REFERENCES books(book_id),
+    loan_date DATE DEFAULT CURRENT_DATE,
+    due_date DATE,
+    return_date DATE,
+    late_fee DECIMAL(6,2)
+);
+CREATE TABLE
+postgres=# INSERT INTO authors (author_name) VALUES
+('J.K. Rowling'),
+('George Orwell'),
+('Leo Tolstoy');
+INSERT 0 3
+postgres=# INSERT INTO books (title, publication_year, genre) VALUES
+('Harry Potter and the Sorcerer''s Stone', 1997, 'Fantasy'),
+('1984', 1949, 'Dystopian'),
+('War and Peace', 1869, 'Historical Fiction');
+INSERT 0 3
+postgres=# INSERT INTO members (member_name, email) VALUES
+('Alice Johnson', 'alice@alatoo.edu.kg'),
+('Bob Smith', 'bob@alatoo.edu.kg');
+INSERT 0 2
+postgres=# INSERT INTO book_authors VALUES
+(1, 1),
+(2, 2),
+(3, 3);
+INSERT 0 3
+postgres=# INSERT INTO loans (member_id, book_id, due_date)
+VALUES
+(1, 1, '2025-10-25'),
+(1, 2, '2025-10-30'),
+(2, 3, '2025-11-01');
+INSERT 0 3
+postgres=# SELECT * FROM authors;
+ author_id |  author_name   
+-----------+----------------
+         1 | J.K. Rowling
+         2 | George Orwell
+         3 | Leo Tolstoy
+(3 rows)
+
+postgres=# SELECT * FROM books;
+ book_id |                 title                  | publication_year |       genre       
+---------+----------------------------------------+------------------+------------------
+       1 | Harry Potter and the Sorcerer's Stone  |             1997 | Fantasy
+       2 | 1984                                   |             1949 | Dystopian
+       3 | War and Peace                          |             1869 | Historical Fiction
+(3 rows)
+
+postgres=# SELECT * FROM members;
+ member_id |  member_name  |        email         |  join_date  
+-----------+---------------+----------------------+-------------
+         1 | Alice Johnson | alice@alatoo.edu.kg  | 2025-10-15
+         2 | Bob Smith     | bob@alatoo.edu.kg    | 2025-10-15
+(2 rows)
+
+postgres=# SELECT * FROM loans;
+ loan_id | member_id | book_id |  loan_date  |  due_date   | return_date | late_fee 
+---------+------------+---------+-------------+-------------+-------------+----------
+       1 |          1 |       1 | 2025-10-15  | 2025-10-25  |             |         
+       2 |          1 |       2 | 2025-10-15  | 2025-10-30  |             |         
+       3 |          2 |       3 | 2025-10-15  | 2025-11-01  |             |         
+(3 rows)
+
+postgres=# SELECT m.member_name, b.title, l.due_date
+FROM loans l
+JOIN members m ON l.member_id = m.member_id
+JOIN books b ON l.book_id = b.book_id;
+ member_name  |                 title                  |  due_date   
+---------------+----------------------------------------+-------------
+ Alice Johnson | Harry Potter and the Sorcerer's Stone  | 2025-10-25
+ Alice Johnson | 1984                                   | 2025-10-30
+ Bob Smith     | War and Peace                          | 2025-11-01
+(3 rows)
+
+postgres=# \d authors
+                                     Table "public.authors"
+   Column    |          Type          | Collation | Nullable |                 Default                  
+-------------+------------------------+-----------+----------+------------------------------------------
+ author_id   | integer                |           | not null | nextval('authors_author_id_seq'::regclass)
+ author_name | character varying(100) |           | not null | 
+Indexes:
+    "authors_pkey" PRIMARY KEY, btree (author_id)
+
+postgres=# \d books
+                                          Table "public.books"
+     Column      |          Type          | Collation | Nullable |                Default                
+-----------------+------------------------+-----------+----------+---------------------------------------
+ book_id         | integer                |           | not null | nextval('books_book_id_seq'::regclass)
+ title           | character varying(200) |           | not null | 
+ publication_year| integer                |           |          | 
+ genre           | character varying(50)  |           |          | 
+Indexes:
+    "books_pkey" PRIMARY KEY, btree (book_id)
+
+postgres=# \d members
+                                      Table "public.members"
+   Column    |          Type          | Collation | Nullable |                  Default                  
+-------------+------------------------+-----------+----------+-------------------------------------------
+ member_id   | integer                |           | not null | nextval('members_member_id_seq'::regclass)
+ member_name | character varying(100) |           | not null | 
+ email       | character varying(150) |           |          | 
+ join_date   | date                   |           |          | CURRENT_DATE
+Indexes:
+    "members_pkey" PRIMARY KEY, btree (member_id)
+    "members_email_key" UNIQUE CONSTRAINT, btree (email)
+
+postgres=# \d loans
+                                          Table "public.loans"
+   Column   |          Type          | Collation | Nullable |                Default                
+------------+------------------------+-----------+----------+---------------------------------------
+ loan_id    | integer                |           | not null | nextval('loans_loan_id_seq'::regclass)
+ member_id  | integer                |           |          | 
+ book_id    | integer                |           |          | 
+ loan_date  | date                   |           |          | CURRENT_DATE
+ due_date   | date                   |           |          | 
+ return_date| date                   |           |          | 
+ late_fee   | numeric(6,2)           |           |          | 
+Indexes:
+    "loans_pkey" PRIMARY KEY, btree (loan_id)
+Foreign-key constraints:
+    "loans_book_id_fkey" FOREIGN KEY (book_id) REFERENCES books(book_id)
+    "loans_member_id_fkey" FOREIGN KEY (member_id) REFERENCES members(member_id)
+
+postgres=# 

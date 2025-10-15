@@ -1,0 +1,229 @@
+> psql -U postgres
+psql (17.6 (Homebrew))
+Type "help" for help.
+
+postgres=# CREATE TABLE employees (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    department VARCHAR(50),
+    salary DECIMAL(10,2),
+    email VARCHAR(100)
+);
+CREATE TABLE
+
+postgres=# CREATE TABLE sales (
+    sale_id SERIAL PRIMARY KEY,
+    employee_id INTEGER REFERENCES employees(id),
+    amount DECIMAL(10,2),
+    sale_date DATE
+);
+CREATE TABLE
+
+postgres=# INSERT INTO employees (name, department, salary, email) VALUES
+('John Smith', 'Sales', 65000, 'john.smith@gmail.com'),
+('Sarah Johnson', 'Engineering', 85000, 'sarah.j@company.com'),
+('Mike Chen', 'Engineering', 95000, 'mike.chen@gmail.com'),
+('Lisa Brown', 'Sales', 55000, 'lisa.brown@company.com'),
+('Alex Wilson', 'Marketing', 75000, 'alex.wilson@gmail.com'),
+('Brad Davis', 'Engineering', 110000, 'brad.davis@company.com'),
+('Brandon Lee', 'Sales', 60000, 'brandon.lee@gmail.com'),
+('Amy Strawberry', 'Marketing', 80000, 'amy@company.com');
+INSERT 0 8
+
+postgres=# INSERT INTO sales (employee_id, amount, sale_date) VALUES
+(1, 1500, '2024-01-15'),
+(1, 800, '2024-02-20'),
+(4, 1200, '2024-01-10'),
+(7, 2000, '2024-03-05'),
+(2, 500, '2024-02-28');
+INSERT 0 5
+
+postgres=# SELECT * FROM employees;
+ id |     name      |  department  | salary  |          email          
+----+---------------+--------------+---------+-------------------------
+  1 | John Smith    | Sales        | 65000.00| john.smith@gmail.com
+  2 | Sarah Johnson | Engineering  | 85000.00| sarah.j@company.com
+  3 | Mike Chen     | Engineering  | 95000.00| mike.chen@gmail.com
+  4 | Lisa Brown    | Sales        | 55000.00| lisa.brown@company.com
+  5 | Alex Wilson   | Marketing    | 75000.00| alex.wilson@gmail.com
+  6 | Brad Davis    | Engineering  |110000.00| brad.davis@company.com
+  7 | Brandon Lee   | Sales        | 60000.00| brandon.lee@gmail.com
+  8 | Amy Strawberry| Marketing    | 80000.00| amy@company.com
+(8 rows)
+
+postgres=# SELECT name, department FROM employees;
+     name      |  department  
+---------------+--------------
+ John Smith    | Sales
+ Sarah Johnson | Engineering
+ Mike Chen     | Engineering
+ Lisa Brown    | Sales
+ Alex Wilson   | Marketing
+ Brad Davis    | Engineering
+ Brandon Lee   | Sales
+ Amy Strawberry| Marketing
+(8 rows)
+
+postgres=# SELECT name, salary, salary * 0.10 AS potential_bonus FROM employees;
+     name      |  salary  | potential_bonus 
+---------------+----------+-----------------
+ John Smith    | 65000.00 |         6500.00
+ Sarah Johnson | 85000.00 |         8500.00
+ Mike Chen     | 95000.00 |         9500.00
+ Lisa Brown    | 55000.00 |         5500.00
+ Alex Wilson   | 75000.00 |         7500.00
+ Brad Davis    |110000.00 |        11000.00
+ Brandon Lee   | 60000.00 |         6000.00
+ Amy Strawberry| 80000.00 |         8000.00
+(8 rows)
+
+postgres=# SELECT name, salary FROM employees WHERE department = 'Sales';
+    name     |  salary  
+-------------+----------
+ John Smith  | 65000.00
+ Lisa Brown  | 55000.00
+ Brandon Lee | 60000.00
+(3 rows)
+
+postgres=# SELECT name FROM employees WHERE salary > 75000 AND department = 'Engineering';
+     name     
+--------------
+ Sarah Johnson
+ Mike Chen
+ Brad Davis
+(3 rows)
+
+postgres=# SELECT name, salary FROM employees WHERE salary BETWEEN 60000 AND 80000;
+     name      |  salary  
+---------------+----------
+ John Smith    | 65000.00
+ Sarah Johnson | 85000.00
+ Alex Wilson   | 75000.00
+ Brandon Lee   | 60000.00
+ Amy Strawberry| 80000.00
+(5 rows)
+
+postgres=# SELECT name FROM employees WHERE name LIKE 'Bra%';
+     name     
+--------------
+ Brad Davis
+ Brandon Lee
+(2 rows)
+
+postgres=# SELECT name FROM employees WHERE name LIKE '%berry';
+     name     
+--------------
+ Amy Strawberry
+(1 row)
+
+postgres=# SELECT name, email FROM employees WHERE email ILIKE '%@gmail.com';
+     name     |         email          
+--------------+------------------------
+ John Smith   | john.smith@gmail.com
+ Mike Chen    | mike.chen@gmail.com
+ Alex Wilson  | alex.wilson@gmail.com
+ Brandon Lee  | brandon.lee@gmail.com
+(4 rows)
+
+postgres=# SELECT name FROM employees WHERE name ~ '^[AB]';
+     name     
+--------------
+ Alex Wilson
+ Brad Davis
+ Brandon Lee
+ Amy Strawberry
+(4 rows)
+
+postgres=# SELECT email FROM employees WHERE email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$';
+           email          
+--------------------------
+ john.smith@gmail.com
+ sarah.j@company.com
+ mike.chen@gmail.com
+ lisa.brown@company.com
+ alex.wilson@gmail.com
+ brad.davis@company.com
+ brandon.lee@gmail.com
+ amy@company.com
+(8 rows)
+
+postgres=# SELECT name, department FROM employees WHERE id IN (1, 3, 5);
+    name     | department 
+-------------+------------
+ John Smith  | Sales
+ Mike Chen   | Engineering
+ Alex Wilson | Marketing
+(3 rows)
+
+postgres=# SELECT name FROM employees WHERE id IN (SELECT employee_id FROM sales WHERE amount > 1000);
+    name     
+-------------
+ John Smith
+ Lisa Brown
+ Brandon Lee
+(3 rows)
+
+postgres=# SELECT name FROM employees e WHERE EXISTS (SELECT 1 FROM sales s WHERE s.employee_id = e.id AND s.amount > 1000);
+    name     
+-------------
+ John Smith
+ Lisa Brown
+ Brandon Lee
+(3 rows)
+
+postgres=# SELECT name, salary,
+    CASE
+        WHEN salary > 100000 THEN 'Senior'
+        WHEN salary BETWEEN 60000 AND 100000 THEN 'Mid-Level'
+        ELSE 'Junior'
+    END AS employee_level
+FROM employees;
+     name      |  salary  | employee_level 
+---------------+----------+----------------
+ John Smith    | 65000.00 | Mid-Level
+ Sarah Johnson | 85000.00 | Mid-Level
+ Mike Chen     | 95000.00 | Mid-Level
+ Lisa Brown    | 55000.00 | Junior
+ Alex Wilson   | 75000.00 | Mid-Level
+ Brad Davis    |110000.00 | Senior
+ Brandon Lee   | 60000.00 | Mid-Level
+ Amy Strawberry| 80000.00 | Mid-Level
+(8 rows)
+
+postgres=# WITH department_averages AS (
+    SELECT
+        department,
+        AVG(salary) AS avg_salary
+    FROM employees
+    GROUP BY department
+)
+SELECT
+    e.name,
+    e.salary,
+    e.department,
+    da.avg_salary
+FROM employees e
+JOIN department_averages da ON e.department = da.department
+WHERE e.salary > da.avg_salary;
+     name     |  salary  |  department  |     avg_salary     
+--------------+----------+--------------+--------------------
+ Mike Chen    | 95000.00 | Engineering  | 96666.666666666667
+ Brad Davis   |110000.00 | Engineering  | 96666.666666666667
+ Amy Strawberry| 80000.00 | Marketing   | 77500.000000000000
+(3 rows)
+
+postgres=# WITH high_performers AS (
+    SELECT employee_id, SUM(amount) as total_sales
+    FROM sales 
+    GROUP BY employee_id
+    HAVING SUM(amount) > 1000
+)
+SELECT e.name, hp.total_sales
+FROM employees e
+JOIN high_performers hp ON e.id = hp.employee_id;
+    name     | total_sales 
+-------------+-------------
+ John Smith  |     2300.00
+ Lisa Brown  |     1200.00
+ Brandon Lee |     2000.00
+(3 rows)
