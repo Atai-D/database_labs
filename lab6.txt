@@ -1,0 +1,135 @@
+> psql -U postgres
+psql (17.6 (Homebrew))
+Type "help" for help.
+
+CREATE TABLE
+postgres=# CREATE TABLE
+postgres-# INSERT INTO departments (dept_name) VALUES
+('Computer Science'),
+('Mathematics'),
+('Physics');
+ERROR:  syntax error at or near "INTO"
+LINE 3: INSERT INTO departments (dept_name) VALUES
+               ^
+postgres=# INSERT INTO departments (dept_name) VALUES
+('Computer Science'),
+('Mathematics'),
+('Physics');
+INSERT 0 3
+postgres=# CREATE TABLE employees (
+    emp_id SERIAL PRIMARY KEY,
+    emp_name VARCHAR(100) NOT NULL,
+    dept_id INTEGER REFERENCES departments(dept_id)
+);
+CREATE TABLE
+postgres=# INSERT INTO employees (emp_name, dept_id)
+VALUES ('Alice', 1);
+INSERT 0 1
+postgres=# INSERT INTO employees (emp_name, dept_id)
+VALUES ('Bob', 10);
+ERROR:  insert or update on table "employees" violates foreign key constraint "employees_dept_id_fkey"
+DETAIL:  Key (dept_id)=(10) is not present in table "departments".
+postgres=# SELECT * FROM departments;
+SELECT * FROM employees;
+ dept_id |    dept_name     
+---------+------------------
+       1 | Computer Science
+       2 | Mathematics
+       3 | Physics
+(3 rows)
+
+ emp_id | emp_name | dept_id 
+--------+----------+---------
+      1 | Alice    |       1
+(1 row)
+
+postgres=# CREATE TABLE authors (
+    author_id SERIAL PRIMARY KEY,
+    author_name VARCHAR(100)
+);
+CREATE TABLE books (
+    book_id SERIAL PRIMARY KEY,
+    title VARCHAR(100),
+    author_id INTEGER REFERENCES authors(author_id) ON DELETE CASCADE
+);
+CREATE TABLE
+CREATE TABLE
+postgres=# INSERT INTO authors (author_name) VALUES
+('Leo Tolstoy'), ('Fyodor Dostoevsky');
+INSERT INTO books (title, author_id) VALUES
+('War and Peace', 1),
+('Crime and Punishment', 2),
+('The Idiot', 2);
+INSERT 0 2
+INSERT 0 3
+postgres=# DELETE FROM authors WHERE author_id = 2;
+DELETE 1
+postgres=# SELECT * FROM books;
+ book_id |     title     | author_id 
+---------+---------------+-----------
+       1 | War and Peace |         1
+(1 row)
+
+postgres=# CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(100) UNIQUE
+);
+CREATE TABLE user_profiles (
+    profile_id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE REFERENCES users(user_id),
+    bio TEXT
+);
+CREATE TABLE
+CREATE TABLE
+postgres=# INSERT INTO users (username) VALUES ('john_doe');
+INSERT INTO user_profiles (user_id, bio)
+VALUES (1, 'Student at Alatoo University');
+INSERT 0 1
+INSERT 0 1
+postgres=# SELECT * FROM users;
+SELECT * FROM user_profiles;
+ user_id | username 
+---------+----------
+       1 | john_doe
+(1 row)
+
+ profile_id | user_id |             bio              
+------------+---------+------------------------------
+          1 |       1 | Student at Alatoo University
+(1 row)
+
+postgres=# CREATE TABLE students (
+    student_id SERIAL PRIMARY KEY,
+    student_name VARCHAR(100)
+);
+CREATE TABLE courses (
+    course_id SERIAL PRIMARY KEY,
+    course_name VARCHAR(100)
+);
+CREATE TABLE enrollments (
+    student_id INTEGER REFERENCES students(student_id),
+    course_id INTEGER REFERENCES courses(course_id),
+    PRIMARY KEY (student_id, course_id)
+);
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+postgres=# INSERT INTO students (student_name) VALUES ('Alice'), ('Bob');
+INSERT INTO courses (course_name) VALUES ('Database Systems'), ('AI'), ('Networking');
+INSERT INTO enrollments VALUES
+(1, 1),
+(1, 2),
+(2, 1);
+INSERT 0 2
+INSERT 0 3
+INSERT 0 3
+postgres=# SELECT s.student_name, c.course_name
+FROM enrollments e
+JOIN students s ON e.student_id = s.student_id
+JOIN courses c ON e.course_id = c.course_id;
+ student_name |   course_name    
+--------------+------------------
+ Alice        | Database Systems
+ Alice        | AI
+ Bob          | Database Systems
+(3 rows)
