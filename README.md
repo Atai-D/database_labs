@@ -1,6 +1,6 @@
 # 🐘 Database Course Labs (PostgreSQL/SQL)
 
-This repository contains practical lab exercises completed for a Database course. The labs focus on hands-on application of **SQL** concepts using the **PostgreSQL** relational database system.
+This repository contains practical lab exercises and certificate of compeletion Karpov SQL course completed for a Database course. The labs focus on hands-on application of **SQL** concepts using the **PostgreSQL** relational database system.
 
 ---
 
@@ -31,6 +31,12 @@ The following 15 labs cover core SQL and database operations, providing a compre
 13. **Advanced Querying** (Subqueries, Views, etc.)
 14. **Transactions and ACID properties**
 15. **Data Import/Export and Backup**
+
+---
+
+## Certificate
+
+File _Atai_Dzhirgalbaev_Karpov_certificate.pdf_ is a certificate that confirms completion of Database course.
 
 ---
 
