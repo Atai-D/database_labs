@@ -1,0 +1,191 @@
+// ER Diagram - Carpool & Group Taxi System (dbdiagram.io format)
+
+Table institutions {
+id bigint [pk]
+name text
+type institution_type
+city text
+}
+
+Table users {
+id bigint [pk]
+phone text [unique]
+name text
+photo_url text
+bio text
+institution_id bigint [ref: > institutions.id]
+created_at timestamptz
+}
+
+Table vehicle_brands {
+id bigint [pk]
+name text [unique]
+country text
+}
+
+Table vehicle_models {
+id bigint [pk]
+brand_id bigint [ref: > vehicle_brands.id]
+name text
+body_type text
+default_seats int
+}
+
+Table locations {
+id bigint [pk]
+name text
+type text
+latitude double
+longitude double
+description text
+}
+
+Table routes {
+id bigint [pk]
+creator_id bigint [ref: > users.id]
+institution_id bigint [ref: > institutions.id]
+route_type route_type
+from_location text
+to_location text
+from_location_id bigint [ref: > locations.id]
+to_location_id bigint [ref: > locations.id]
+departure_time time
+price_per_ride numeric
+price_per_week numeric
+seats int
+notes text
+is_active boolean
+created_at timestamptz
+}
+
+Table route_schedule_days {
+route_id bigint [ref: > routes.id]
+weekday smallint
+primary key (route_id, weekday)
+}
+
+Table route_members {
+route_id bigint [ref: > routes.id]
+user_id bigint [ref: > users.id]
+role_in_route route_member_role
+joined_at timestamptz
+is_active boolean
+primary key (route_id, user_id)
+}
+
+Table route_stops {
+id bigint [pk]
+route_id bigint [ref: > routes.id]
+position_in_route int
+location_id bigint [ref: > locations.id]
+name text
+arrival_offset_minutes int
+}
+
+Table route_invites {
+id bigint [pk]
+route_id bigint [ref: > routes.id]
+invited_user_id bigint [ref: > users.id]
+invite_token text
+status text
+expires_at timestamptz
+created_at timestamptz
+}
+
+Table trips {
+id bigint [pk]
+route_id bigint [ref: > routes.id]
+trip_date date
+status trip_status
+created_at timestamptz
+}
+
+Table trip_participants {
+trip_id bigint [ref: > trips.id]
+user_id bigint [ref: > users.id]
+status trip_participant_status
+rating_for_driver int
+rating_for_passenger int
+comment text
+primary key (trip_id, user_id)
+}
+
+Table vehicles {
+id bigint [pk]
+owner_id bigint [ref: > users.id]
+model_id bigint [ref: > vehicle_models.id]
+plate_number text
+color text
+year int
+seats int
+is_verified boolean
+created_at timestamptz
+}
+
+Table payment_methods {
+id bigint [pk]
+user_id bigint [ref: > users.id]
+method_type payment_method_type
+details_masked text
+is_default boolean
+created_at timestamptz
+}
+
+Table payments {
+id bigint [pk]
+trip_id bigint [ref: > trips.id]
+payer_id bigint [ref: > users.id]
+method_id bigint [ref: > payment_methods.id]
+amount numeric
+status payment_status
+created_at timestamptz
+}
+
+Table promo_codes {
+id bigint [pk]
+code text
+description text
+discount_percent int
+active_from date
+active_until date
+max_uses_total int
+max_uses_per_user int
+is_active boolean
+}
+
+Table user_promo_codes {
+user_id bigint [ref: > users.id]
+promo_code_id bigint [ref: > promo_codes.id]
+used_at timestamptz
+trip_id bigint [ref: > trips.id]
+primary key (user_id, promo_code_id, used_at)
+}
+
+Table notifications {
+id bigint [pk]
+user_id bigint [ref: > users.id]
+type notification_type
+payload jsonb
+created_at timestamptz
+read_at timestamptz
+}
+
+Table support_tickets {
+id bigint [pk]
+user_id bigint [ref: > users.id]
+subject text
+description text
+status support_ticket_status
+created_at timestamptz
+updated_at timestamptz
+}
+
+Table audit_logs {
+id bigint [pk]
+user_id bigint [ref: > users.id]
+action text
+entity_type text
+entity_id bigint
+created_at timestamptz
+meta jsonb
+}
