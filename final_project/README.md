@@ -184,3 +184,14 @@ course_project/
   backup_restore.md
   er_diagram_dbdiagram.txt   -- ER diagram text for dbdiagram.io
 ```
+
+## 7. Presentation
+
+The project presentation is available at the following link:
+
+https://www.canva.com/design/DAG7be77CiU/LtbVevDKqS-JCaQJsokVuw/edit?utm_content=DAG7be77CiU&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
+
+## 8. Academic Pledge
+
+I pledge that I will meet all project deadlines as required by the course.
+I understand that failure to meet deadlines or course requirements may result in disciplinary action, and I accept full responsibility for this.
